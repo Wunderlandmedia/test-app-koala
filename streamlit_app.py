@@ -225,14 +225,17 @@ def upload_to_wordpress(site_url, username, password, faqs, post_type):
                 "content": faq["Antwort"],
                 "status": "publish"
             }
+            st.write(f"Uploading FAQ: {data}")  # Debugging statement to log the data being uploaded
             response = requests.post(f"{site_url}/wp-json/wp/v2/{post_type}", json=data, headers=headers, auth=auth)
+            st.write(f"Response Status Code: {response.status_code}")  # Debugging statement to log the response status code
+            st.write(f"Response Text: {response.text}")  # Debugging statement to log the response text
 
             if response.status_code == 201:
                 success_count += 1
+                st.write(f"Successfully uploaded FAQ: {faq['Frage']}")
             else:
                 st.error(f"Failed to upload FAQ: {faq['Frage']} - Status code: {response.status_code}")
                 st.error(f"Response: {response.text}")
-
         except Exception as e:
             st.error(f"Exception occurred while uploading FAQ: {faq['Frage']}")
             st.error(str(e))
@@ -282,6 +285,7 @@ if 'faq_df' in st.session_state:
     csv = st.session_state['faq_df'].to_csv(index=False)
     st.download_button(label="Download FAQs as CSV", data=csv, file_name="output_faqs.csv", mime="text/csv", key="faqs_csv_download")
 
+# Display WordPress settings and upload button only if the checkbox is selected
 # Display WordPress settings and upload button only if the checkbox is selected
 if upload_to_wp and 'faq_df' in st.session_state:
     st.markdown("### WordPress Settings")
