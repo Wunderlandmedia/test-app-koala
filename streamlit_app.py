@@ -312,19 +312,19 @@ if 'faq_df' in st.session_state:
 # Display WordPress settings and upload button only if the checkbox is selected
 if upload_to_wp and 'faq_df' in st.session_state:
     st.markdown("### WordPress Settings")
-    site_url = st.text_input(texts["wp_url_prompt"])
-    wp_username = st.text_input(texts["wp_user_prompt"])
-    wp_password = st.text_input(texts["wp_password_prompt"], type="password")
-    post_type = st.selectbox(texts["post_type_prompt"], ("posts", "pages", "custom"))
+    site_url = st.text_input(texts["wp_url_prompt"], key="wp_url_input")
+    wp_username = st.text_input(texts["wp_user_prompt"], key="wp_user_input")
+    wp_password = st.text_input(texts["wp_password_prompt"], type="password", key="wp_password_input")
+    post_type = st.selectbox(texts["post_type_prompt"], ("posts", "pages", "custom"), key="post_type_select")
 
-    check_wp_button = st.button("Check WordPress Connection")
+    check_wp_button = st.button("Check WordPress Connection", key="check_wp_button")
 
     if check_wp_button:
         if site_url and wp_username and wp_password:
             success, status_code, response_text = check_wordpress_connection(site_url, wp_username, wp_password)
             if success:
                 st.success("Successfully connected to WordPress and created a test draft post!")
-                upload_wp_button = st.button(texts["upload_wp_button"])
+                upload_wp_button = st.button(texts["upload_wp_button"], key="upload_wp_button")
                 if upload_wp_button:
                     if upload_to_wordpress(site_url, wp_username, wp_password, st.session_state['faq_df'], post_type):
                         st.success(texts["upload_success"])
@@ -334,3 +334,4 @@ if upload_to_wp and 'faq_df' in st.session_state:
                 st.error(f"Failed to connect to WordPress. Status code: {status_code}. Response: {response_text}")
         else:
             st.error("Please provide your WordPress site URL, username, and application password.")
+
