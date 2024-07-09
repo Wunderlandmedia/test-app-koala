@@ -267,39 +267,32 @@ if upload_to_wordpress and 'faq_df' in st.session_state:
 
 
 # Add a checkbox to show WordPress settings
-upload_to_wp = st.checkbox("Upload to WordPress?", key="upload_to_wp")
+upload_to_wp = st.checkbox("Upload to WordPress?", key="upload_to_wp_checkbox")
 
-if generate_button:
-    if api_key and uploaded_file:
-        # Read the uploaded CSV file
-        df_input = pd.read_csv(uploaded_file, delimiter=';')
-        df_input.columns = df_input.columns.str.strip()  # Remove leading/trailing spaces
-        
-        # Ensure the DataFrame has the necessary columns
-        if "Leistung" not in df_input.columns:
-            df_input["Leistung"] = ""
-        if "Frage" not in df_input.columns:
-            df_input["Frage"] = ""
-        if "Antwort" not in df_input.columns:
-            df_input["Antwort"] = ""
-        
-        # Create a new DataFrame for FAQ entries
-        faq_df = pd.DataFrame(columns=["Leistung", "Frage", "Antwort"])
-        
-        # Iterate over each row to generate questions and answers
-        for index, row in df_input.iterrows():
-            leistung = row["Leistung"]
-            questions = generate_questions(api_key, leistung, num_faqs, model, language)
-    
-            for question in questions:
-                question = question.strip()
-                if question:
-                    answer = generate_answers(api_key, question, leistung, model, language)
-                    new_row = pd.DataFrame({"Leistung": [leistung], "Frage": [question], "Antwort": [answer]})
-                    faq_df = pd.concat([faq_df, new_row], ignore_index=True)
-        
-        # Store the generated FAQs in the session state
-        st.session_state['faq_df'] = faq_df
+if upload_to_wp and 'faq_df' in st.session_state:
+    st.markdown("### WordPress Settings")
+    site_url = st.text_input(texts["wp_url_prompt"], key="wp_url_input")
+    wp_username = st.text_input(texts["wp_user_prompt"], key="wp_user_input")
+    wp_password = st.text_input(texts["wp_password_prompt"], type="password", key="wp_password_input")
+    post_type = st.selectbox(texts["post_type_prompt"], ("posts", "pages", "custom"), key="post_type_select")
+
+    check_wp_button = st.button("Check WordPress Connection", key="check_wp_button")
+
+    if check_wp_button:
+        if site_url and wp_username and wp_password:
+            success, status_code, response_text = check_wordpress_connection(site_url, wp_username, wp_password)
+            if success:
+                st.success("Successfully connected to WordPress and created a test draft post!")
+                upload_wp_button = st.button(texts["upload_wp_button"], key="upload_wp_button")
+                if upload_wp_button:
+                    if upload_to_wordpress(site_url, wp_username, wp_password, st.session_state['faq_df'], post_type):
+                        st.success(texts["upload_success"])
+                    else:
+                        st.error(texts["upload_failure"])
+            else:
+                st.error(f"Failed to connect to WordPress. Status code: {status_code}. Response: {response_text}")
+        else:
+            st.error("Please provide your WordPress site URL, username, and application password.")
 
 # Display the generated FAQs if available in session state
 if 'faq_df' in st.session_state:
