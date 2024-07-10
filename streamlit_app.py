@@ -194,6 +194,37 @@ def generate_answers(api_key, question, leistung, model, language):
         return ""
 
 
+import requests
+
+def check_wp_connection(wp_api_url, wp_api_key):
+    """Check if the WordPress connection is working."""
+    try:
+        response = requests.get(wp_api_url, headers={"Authorization": f"Bearer {wp_api_key}"})
+        return response.status_code == 200
+    except Exception as e:
+        print(f"Error checking WordPress connection: {e}")
+        return False
+
+def upload_faqs_to_wordpress(faq_df, wp_api_url, wp_api_key):
+    """Upload FAQs to WordPress."""
+    if not check_wp_connection(wp_api_url, wp_api_key):
+        return "Failed to connect to WordPress. Please check your API key and URL."
+    
+    for _, row in faq_df.iterrows():
+        post_data = {
+            "title": row["Frage"],
+            "content": row["Antwort"],
+            "status": "publish",
+        }
+        try:
+            response = requests.post(f"{wp_api_url}/wp/v2/posts", headers={"Authorization": f"Bearer {wp_api_key}"}, json=post_data)
+            if response.status_code != 201:
+                print(f"Failed to upload FAQ: {row['Frage']}")
+        except Exception as e:
+            print(f"Error uploading FAQ to WordPress: {e}")
+            return "Error uploading FAQs. Please try again."
+    return "FAQs successfully uploaded to WordPress."
+
 # Function to check WordPress connection by creating a test draft post
 def check_wordpress_connection(site_url, username, password):
     auth = HTTPBasicAuth(username, password)
@@ -285,7 +316,6 @@ if 'faq_df' in st.session_state:
     csv = st.session_state['faq_df'].to_csv(index=False)
     st.download_button(label="Download FAQs as CSV", data=csv, file_name="output_faqs.csv", mime="text/csv", key="faqs_csv_download")
 
-# Display WordPress settings and upload button only if the checkbox is selected
 # Display WordPress settings and upload button only if the checkbox is selected
 if upload_to_wp and 'faq_df' in st.session_state:
     st.markdown("### WordPress Settings")
